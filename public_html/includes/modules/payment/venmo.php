@@ -38,7 +38,13 @@ class venmo
         $db->Execute("insert into ". TABLE_CONFIGURATION ." (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('enable venmo payment module', 'MODULE_PAYMENT_VENMO_STATUS', 'true', 'Do you want to access venmo module payments?', '6', '1', now());");
     }
 
+    public function remove()
+    {
+        global $db;
+        $db->Execute("delete from " . TABLE_CONFIGURATION . " where configuration_key in ('" . implode( ', ', $this->keys()) . "')");
+    }
+
     function keys() {
-        return array();
+        return array('MODULE_PAYMENT_VENMO_STATUS');
     }
 }
