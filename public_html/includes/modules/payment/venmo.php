@@ -35,7 +35,7 @@ class venmo
             zen_redirect(zen_href_link(FILENAME_MODULES, 'set=payment&module=venmo', 'NONSSL'));
             return 'failed';
         }
-        $db->Execute("insert into ". TABLE_CONFIGURATION ." (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) values ('enable venmo payment module', 'MODULE_PAYMENT_VENMO_STATUS', 'true', 'Do you want to access venmo module payments?', '6', '1', now());");
+        $db->Execute("insert into ". TABLE_CONFIGURATION ." (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, date_added) values ('enable venmo payment module', 'MODULE_PAYMENT_VENMO_STATUS', 'true', 'Do you want to access venmo module payments?', '6', now());");
     }
 
     public function remove()
