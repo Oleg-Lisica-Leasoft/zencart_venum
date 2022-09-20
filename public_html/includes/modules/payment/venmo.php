@@ -11,7 +11,8 @@ class venmo
         $this->enabled = (defined('MODULE_PAYMENT_VENMO_STATUS') && MODULE_PAYMENT_VENMO_STATUS == 'True');
     }
 
-    function check() {
+    function check()
+    {
         global $db;
         if (!isset($this->_check)) {
             $check_query = $db->Execute("select configuration_value from " . TABLE_CONFIGURATION . " where configuration_key = 'MODULE_PAYMENT_VENMO_STATUS'");
@@ -20,13 +21,24 @@ class venmo
         return $this->_check;
     }
 
-    function javascript_validation() {
+    function javascript_validation()
+    {
         return false;
     }
 
-    function selection() {
-        return array('id' => $this->code,
-            'module' => $this->title);
+    function selection()
+    {
+        require_once(DIR_FS_CATALOG . DIR_WS_MODULES . 'payment/venmo/helper.php');
+        $selection = ['id' => $this->code,
+            'module' => $this->title];
+        $issuers = (new helper)->client->getIdealIssuers();
+        $issuers_fields = [];
+        for($i = 0; $i < sizeof($issuers); $i++) {
+            $issuers_fields[$i]['field'] = $issuers[$i]['name'];
+            $issuers_fields[$i]['title'] = $issuers[$i]['id'];
+        }
+        $selection['fields'] = $issuers_fields;
+        return $selection;
     }
 
     public function install()
@@ -46,7 +58,8 @@ class venmo
         $db->Execute("delete from " . TABLE_CONFIGURATION . " where configuration_key in ('" . implode( ', ', $this->keys()) . "')");
     }
 
-    function keys() {
+    function keys()
+    {
         return array('MODULE_PAYMENT_VENMO_STATUS');
     }
 }
