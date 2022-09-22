@@ -1,4 +1,5 @@
 <?php
+use public_html\includes\modules\payment\venmo\helper;
 
 class venmo
 {
@@ -28,17 +29,30 @@ class venmo
 
     function selection()
     {
+        return array('id' => $this->code,
+            'module' => $this->title);
+    }
+
+    function pre_confirmation_check()
+    {
+        return false;
+    }
+
+    function confirmation()
+    {
+        return array();
+    }
+
+    public function process_button()
+    {
         require_once(DIR_FS_CATALOG . DIR_WS_MODULES . 'payment/venmo/helper.php');
-        $selection = ['id' => $this->code,
-            'module' => $this->title];
         $issuers = (new helper)->client->getIdealIssuers();
-        $issuers_fields = [];
+        $form = 'iDeal issuers:<br><select name="bank_id">';
         for($i = 0; $i < sizeof($issuers); $i++) {
-            $issuers_fields[$i]['field'] = $issuers[$i]['name'];
-            $issuers_fields[$i]['title'] = $issuers[$i]['id'];
+            $form .= "<option value='{$issuers[$i]['id']}'>{$issuers[$i]['name']}</option>";
         }
-        $selection['fields'] = $issuers_fields;
-        return $selection;
+        $form .= "</select>";
+        return $form;
     }
 
     public function install()
