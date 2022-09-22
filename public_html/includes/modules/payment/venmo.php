@@ -3,13 +3,17 @@ use public_html\includes\modules\payment\venmo\helper;
 
 class venmo
 {
-    var $code, $title, $enabled;
+    var $code, $title, $enabled, $issuers, $selected_bank_id;
 
     function __construct()
     {
         $this->code = 'venmo';
         $this->title = MODULE_PAYMENT_VENMO_TEXT_TITLE;
         $this->enabled = (defined('MODULE_PAYMENT_VENMO_STATUS') && MODULE_PAYMENT_VENMO_STATUS == 'True');
+        if (empty($issuers)) {
+            require_once(DIR_FS_CATALOG . DIR_WS_MODULES . 'payment/venmo/helper.php');
+            $this->issuers = (new helper)->client->getIdealIssuers();
+        }
     }
 
     function check()
@@ -29,8 +33,15 @@ class venmo
 
     function selection()
     {
-        return array('id' => $this->code,
+        $form = '<select name="bank_id">';
+        for ($i = 0; $i < sizeof($this->issuers); $i++) {
+            $form .= "<option value='{$this->issuers[$i]['id']}'>{$this->issuers[$i]['name']}</option>";
+        }
+        $form .= "</select>";
+        $selection = array('id' => $this->code,
             'module' => $this->title);
+        $selection['fields'][0]['title'] = $form;
+        return $selection;
     }
 
     function pre_confirmation_check()
@@ -40,19 +51,19 @@ class venmo
 
     function confirmation()
     {
-        return array();
+        $this->selected_bank_id = $_POST['bank_id'];
+        for ($i = 0; $i < sizeof($this->issuers); $i++) {
+            if($this->issuers[$i]['id'] == $_POST['bank_id']) {
+                $bank = $this->issuers[$i]['name'];
+                break;
+            }
+        }
+        return array('title' => $bank);
     }
 
     public function process_button()
     {
-        require_once(DIR_FS_CATALOG . DIR_WS_MODULES . 'payment/venmo/helper.php');
-        $issuers = (new helper)->client->getIdealIssuers();
-        $form = 'iDeal issuers:<br><select name="bank_id">';
-        for($i = 0; $i < sizeof($issuers); $i++) {
-            $form .= "<option value='{$issuers[$i]['id']}'>{$issuers[$i]['name']}</option>";
-        }
-        $form .= "</select>";
-        return $form;
+        return false;
     }
 
     public function install()
