@@ -1,5 +1,8 @@
 <?php
-use public_html\includes\modules\payment\venmo\helper;
+
+require(DIR_FS_CATALOG . DIR_WS_MODULES . '/payment/venmo/Helper.php');
+
+use public_html\includes\modules\payment\venmo\Helper;
 
 class venmo
 {
@@ -10,9 +13,9 @@ class venmo
         $this->code = 'venmo';
         $this->title = MODULE_PAYMENT_VENMO_TEXT_TITLE;
         $this->enabled = (defined('MODULE_PAYMENT_VENMO_STATUS') && MODULE_PAYMENT_VENMO_STATUS == 'True');
-        if (empty($issuers)) {
-            require_once(DIR_FS_CATALOG . DIR_WS_MODULES . 'payment/venmo/helper.php');
-            $this->issuers = (new helper)->client->getIdealIssuers();
+
+        if ($this->enabled == 'True' && empty($this->issuers)) {
+            (new helper())->writeIssuers($this);
         }
     }
 
@@ -54,14 +57,19 @@ class venmo
         $this->selected_bank_id = $_POST['bank_id'];
         for ($i = 0; $i < sizeof($this->issuers); $i++) {
             if($this->issuers[$i]['id'] == $_POST['bank_id']) {
-                $bank = $this->issuers[$i]['name'];
+                $method = $this->issuers[$i]['name'];
                 break;
             }
         }
-        return array('title' => $bank);
+        return array('title' => $method);
     }
 
     public function process_button()
+    {
+        return false;
+    }
+
+    public function after_process()
     {
         return false;
     }
@@ -74,17 +82,19 @@ class venmo
             zen_redirect(zen_href_link(FILENAME_MODULES, 'set=payment&module=venmo', 'NONSSL'));
             return 'failed';
         }
-        $db->Execute("insert into ". TABLE_CONFIGURATION ." (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, date_added) values ('enable venmo payment module', 'MODULE_PAYMENT_VENMO_STATUS', 'True', 'Do you want to access venmo module payments?', '6', now());");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, set_function, date_added) VALUES ('Currency Supported', 'MODULE_PAYMENT_VENMO_CURRENCY', 'EUR', 'Which currency is your Module Venmo configured to accept?<br>(Purchases in any other currency will be pre-converted to this currency)', '6', 'zen_cfg_select_option(array(\'EUR\'), ', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, date_added, use_function) VALUES ('Api Key', 'MODULE_PAYMENT_VENMO_APIKEY', 'Test', 'Api key:', '6', now(), 'zen_cfg_password_display')");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, date_added) VALUES ('Enable venmo payment module', 'MODULE_PAYMENT_VENMO_STATUS', 'True', 'Do you want to access venmo module payments?', '6', now());");
     }
 
     public function remove()
     {
         global $db;
-        $db->Execute("delete from " . TABLE_CONFIGURATION . " where configuration_key in ('" . implode( ', ', $this->keys()) . "')");
+        $db->Execute("DELETE FROM " . TABLE_CONFIGURATION . " WHERE configuration_key IN ('" . implode( "', '", $this->keys()) . "')");
     }
 
-    function keys()
+    public function keys()
     {
-        return array('MODULE_PAYMENT_VENMO_STATUS');
+        return array('MODULE_PAYMENT_VENMO_STATUS', 'MODULE_PAYMENT_VENMO_APIKEY', 'MODULE_PAYMENT_VENMO_CURRENCY');
     }
 }
