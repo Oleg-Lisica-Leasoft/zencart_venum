@@ -1,12 +1,14 @@
 <?php
 
 require(DIR_FS_CATALOG . DIR_WS_MODULES . '/payment/venmo/Helper.php');
+require(DIR_FS_CATALOG . DIR_WS_MODULES . '/payment/venmo/Collection.php');
 
 use public_html\includes\modules\payment\venmo\Helper;
+use public_html\includes\modules\payment\venmo\Collection;
 
 class venmo
 {
-    var $code, $title, $enabled, $issuers, $selected_bank_id;
+    var $code, $title, $enabled, $issuers;
 
     function __construct()
     {
@@ -54,7 +56,6 @@ class venmo
 
     function confirmation()
     {
-        $this->selected_bank_id = $_POST['bank_id'];
         for ($i = 0; $i < sizeof($this->issuers); $i++) {
             if($this->issuers[$i]['id'] == $_POST['bank_id']) {
                 $method = $this->issuers[$i]['name'];
@@ -66,7 +67,20 @@ class venmo
 
     public function process_button()
     {
-        return false;
+        return zen_draw_hidden_field('bank_id', $_POST['bank_id']);
+    }
+
+    public function before_process()
+    {
+        if(!isset($_COOKIE['venmo_transaction'])) {
+            setcookie('venmo_transaction', 1);
+            $request_data = (new Collection())->getRequestData();
+            $response = (new Helper())->client->createOrder($request_data);
+            header("Location: " . $response['transactions'][0]['payment_url']);
+            die();
+        } else {
+            setcookie('venmo_transaction', 0, time());
+        }
     }
 
     public function after_process()
